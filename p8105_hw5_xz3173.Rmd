@@ -42,19 +42,64 @@ For the city of Baltimore, MD, use the prop.test function to estimate the propor
 ```{r}
 # filter data for Baltimore, MD
 baltimore_df = city_summary |>
-  filter(city_state == "Baltimore, MD") |>
+  filter(city_state == "Baltimore, MD") 
 
 # using prop.test to estimate the proportion of unsolved homicides
-  summarize(
-    test_result = list(
-      prop.test(
-        x = unsolved_homicides,
-        n = total_homicides) |>
-        tidy()
+prop_test_result = 
+  prop.test(
+    x = pull(baltimore_df, unsolved_homicides),
+    n = pull(baltimore_df, total_homicides)) 
+
+# tidying the result using broom:tidy
+tidied_result = broom::tidy(prop_test_result)
+
+# extracting the estimated proportion and confidence intervals
+estimated_proportion = pull(tidied_result, estimate)
+conf_low = pull(tidied_result, conf.low)
+conf_high = pull(tidied_result, conf.high)
+```
+
+Now run prop.test for each of the cities in your dataset, and extract both the proportion of unsolved homicides and the confidence interval for each. Do this within a “tidy” pipeline, making use of purrr::map, purrr::map2, list columns and unnest as necessary to create a tidy dataframe with estimated proportions and CIs for each city.
+
+```{r}
+results_df = city_summary |>
+  mutate(
+    prop_test_result = map2(
+      unsolved_homicides,
+      total_homicides,
+      ~prop.test(x = .x, n = .y)
     )
   ) |>
-  pull(test_result)
+  mutate(tidied_result = map(prop_test_result, broom::tidy)) |>
+  unnest(tidied_result) |>
+  select(city_state, estimate, conf.low, conf.high)
 
-# check the results
-baltimore_df
+head(results_df)
+```
+
+Create a plot that shows the estimates and CIs for each city – check out geom_errorbar for a way to add error bars based on the upper and lower limits. Organize cities according to the proportion of unsolved homicides.
+
+```{r}
+# create the plot
+plot = 
+  ggplot(
+    results_df, 
+    aes(
+      x = reorder(city_state, -estimate), 
+      y = estimate)) +
+  geom_point(color = "blue", size = 3) +
+  geom_errorbar(
+    aes(
+      ymin = conf.low,
+      ymax = conf.high), 
+    width = 0.2,
+    color = "red") +
+  coord_flip() +
+  labs(
+    tittle = "Proportiton of Unsolved Homicides by City",
+    x = "City",
+    y = "Estimated Proportion of Unsolved Homicides") +
+  theme_minimal()
+
+plot
 ```
