@@ -13,6 +13,25 @@ library(rvest)
 # Problem 1
 
 ```{r}
+# Load homicide dataset
 homicide_df = 
-  read_csv("data/homicide-data.csv")
+  read_csv("data/homicide-data.csv") |>
+  janitor::clean_names()
+
+homicide_df
+```
+
+Describe the raw data. Create a city_state variable (e.g. “Baltimore, MD”) and then summarize within cities to obtain the total number of homicides and the number of unsolved homicides (those for which the disposition is “Closed without arrest” or “Open/No arrest”).
+
+```{r}
+# create a city_state variable
+homicide_df = homicide_df |>
+  mutate(city_state = str_c(city, state, sep = ", ")) |>
+
+# summarize within cities to obtain the ttotal number of homicides and the number of unsolved homicides
+  group_by(city_state) |>
+  summarize(
+    total_homicides = n(),
+    unsolved_homicides = sum(disposition %in% c("Closed without arrestt", "Open/No arrest"))
+  )
 ```
