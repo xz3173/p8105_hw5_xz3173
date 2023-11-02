@@ -6,6 +6,13 @@ output: github_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(rvest)
 ```
 
+# Problem 1
+
+```{r}
+homicide_df = 
+  read_csv("data/homicide-data.csv")
+```
