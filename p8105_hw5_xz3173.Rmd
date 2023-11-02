@@ -8,6 +8,7 @@ output: github_document
 ```{r setup, include=FALSE}
 library(tidyverse)
 library(rvest)
+library(broom)
 ```
 
 # Problem 1
@@ -25,13 +26,35 @@ Describe the raw data. Create a city_state variable (e.g. “Baltimore, MD”) a
 
 ```{r}
 # create a city_state variable
-homicide_df = homicide_df |>
+city_summary = homicide_df |>
   mutate(city_state = str_c(city, state, sep = ", ")) |>
 
 # summarize within cities to obtain the ttotal number of homicides and the number of unsolved homicides
   group_by(city_state) |>
   summarize(
     total_homicides = n(),
-    unsolved_homicides = sum(disposition %in% c("Closed without arrestt", "Open/No arrest"))
+    unsolved_homicides = sum(disposition %in% c("Closed without arrest", "Open/No arrest"))
   )
+```
+
+For the city of Baltimore, MD, use the prop.test function to estimate the proportion of homicides that are unsolved; save the output of prop.test as an R object, apply the broom::tidy to this object and pull the estimated proportion and confidence intervals from the resulting tidy dataframe.
+
+```{r}
+# filter data for Baltimore, MD
+baltimore_df = city_summary |>
+  filter(city_state == "Baltimore, MD") |>
+
+# using prop.test to estimate the proportion of unsolved homicides
+  summarize(
+    test_result = list(
+      prop.test(
+        x = unsolved_homicides,
+        n = total_homicides) |>
+        tidy()
+    )
+  ) |>
+  pull(test_result)
+
+# check the results
+baltimore_df
 ```
