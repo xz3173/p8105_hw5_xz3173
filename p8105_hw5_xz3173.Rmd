@@ -103,3 +103,70 @@ plot =
 
 plot
 ```
+
+
+
+# Problem 2
+
+Create a tidy dataframe containing data from all participants, including the subject ID, arm, and observations over time:
+
+Start with a dataframe containing all file names; the list.files function will help
+Iterate over file names and read in data for each subject using purrr::map and saving the result as a new variable in the dataframe
+Tidy the result; manipulate file names to include control arm and subject ID, make sure weekly observations are “tidy”, and do any other tidying that’s necessary
+
+
+
+
+```{r}
+# start with a dataframe containing all file names
+file_names = list.files(path = "data2", pattern = "*.csv", full.names = TRUE)
+file_info = tibble(file = file_names)
+
+# read in data for each subject using purrr::map
+file_info = file_info |>
+  mutate(data = map(file, read_csv))
+
+# tidying the data
+tidy_data = file_info |>
+  mutate(
+    subject_id = str_extract(file, "(?<=con_|exp_)[0-9]+"), 
+    arm = ifelse(str_detect(file, "con"), "con", "exp")) |>
+  select(subject_id, arm, data) |>
+  unnest(cols = c(data)) |>
+  pivot_longer(
+    cols = starts_with("week"),
+    names_to = "week",
+    values_to = "observation"
+  ) |>
+  mutate(
+    week = str_extract(week, "[0-9]+") |>
+      as.numeric()) # extracting week number for plotting
+```
+
+Make a spaghetti plot showing observations on each subject over time, and comment on differences between groups.
+
+```{r}
+# create spaghetti plot
+ggplot(
+  tidy_data, 
+  aes(
+    x = week,
+    y = observation, 
+    group = subject_id,
+    color = arm)) +
+  geom_line(alpha = 0.5) +
+  theme_minimal() +
+  labs(title = "Spaghetti Plot of Observations over Time",
+       x = "Week",
+       y = "Observation") +
+  scale_color_manual(values = c("con" = "blue", "exp" = "red"))
+```
+
+
+# Problem 3
+
+
+
+```{r}
+
+```
