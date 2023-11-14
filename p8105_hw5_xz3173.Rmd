@@ -192,16 +192,6 @@ For each dataset, save μ̂
 Repeat the above for μ={1,2,3,4,5,6}
 , and complete the following:
 
-Make a plot showing the proportion of times the null was rejected (the power of the test) on the y axis and the true value of μ
- on the x axis. Describe the association between effect size and power.
-Make a plot showing the average estimate of μ̂ 
- on the y axis and the true value of μ
- on the x axis. Make a second plot (or overlay on the first) the average estimate of μ̂ 
- only in samples for which the null was rejected on the y axis and the true value of μ
- on the x axis. Is the sample average of μ̂ 
- across tests for which the null is rejected approximately equal to the true value of μ
-? Why or why not?
-
 
 
 
@@ -246,3 +236,76 @@ all_results = sim_grid |>
   )
 ```
 
+Make a plot showing the proportion of times the null was rejected (the power of the test) on the y axis and the true value of μ on the x axis. 
+ 
+```{r}
+# Calculate power for each mu
+power_analysis = all_results |>
+  group_by(mu) |>
+  summarize(power = mean(rejected_null))
+
+power_analysis
+```
+
+```{r}
+ggplot(power_analysis, aes(x = mu, y = power)) +
+  geom_line() +
+  geom_point() +
+  theme_minimal() +
+  labs(
+    title = "Power of the Test vs. True mean (mu)",
+    x = "True Mean (mu)",
+    y = "Power of the Test"
+  )
+```
+
+**Describe the association between effect size and power.**
+
+**In the generated plot, we observe a clear positive association between the effect size (true mean, mu) and the power of the test. As the value of mu increases, moving away from the null hypothesis of mu = 0, the power of the test also increases. This trend illustrates a fundamental principle of hypothesis testing: larger effect sizes generally make it easier for a test to detect significant differences from the null hypothesis.**
+
+**At lower values of mu (closer to 0), the power of the test is relatively low. This indicates that when the true mean is close to the value under the null hypothesis, our test has a reduced ability to correctly reject the null hypothesis. In particular terms, this means there's a higher chance of committing a Type II error (failing to detect a true effect) when the effect size is small.**
+
+**As mu increases, the power of the test rises sharply. This increase in power suggests that our test becomes more effective at detecting true effects as they become more pronounced. When the effect size is large (mu significantly greater than 0), the likelihood that our test will correctly reject the null hypothesis is higher. Thus, the test demonstrates greater sensitivity to larger effect sizes.**
+
+**This relationship underscores the importance of considering effect size in experimental design and analysis. In scenarios where small effect sizes are expected, larger sample sizes might be necessary to achieve adequate power. Conversely, for large effect sizes, even a smaller sample might suffice to yield reliable results. The plot demonstrates that the ability of a statistical test to uncover true effects is heavily dependent on the magnitude of these effects relative to the null hypothesis.**
+
+
+Make a plot showing the average estimate of μ̂ on the y axis and the true value of μ on the x axis. Make a second plot (or overlay on the first) the average estimate of μ̂ only in samples for which the null was rejected on the y axis and the true value of μ on the x axis. 
+
+
+```{r}
+# Calculate average estimates
+average_estimates = all_results |>
+  group_by(mu) |>
+  summarize(
+    overall_mean_mu_hat = mean(estimate),
+    mean_mu_hat_when_rejected = mean(estimate[rejected_null], na.rm = TRUE)
+  )
+
+average_estimates
+```
+
+**Overall mean mu_hat: For each true mean value, from 0 to 6, the overall estimate of mu_hat is very close to the true mean. This indicates that, on average, the tests provide unbiased estimates of the true mean.**
+
+**Mean mu when null rejected: When mu = 0, the mean estimate of mu_hat when the null is rejected is 0.220, which is notably higher than the true mean of 0. This is a clear indication of bias due to only considering samples where the null is rejected. As mu increases, the mean estimate of mu_hat in cases where the null is rejected gets closer to the true mean. For mu = 1, the estimate is 2.24, but by the time mu reaches 6, the estimate (5.99) is nearly identical to the true mean.**
+
+```{r}
+ggplot(average_estimates, aes(x = mu)) +
+  geom_line(aes(y = overall_mean_mu_hat), color = "blue") +
+  geom_line(aes(y = mean_mu_hat_when_rejected), color = "red") +
+  geom_point(aes(y = overall_mean_mu_hat), color = "blue") +
+  geom_point(aes(y = mean_mu_hat_when_rejected), color = "red") +
+  theme_minimal() +
+  labs(
+    title = "Average Estimates of mu_hat vs. True Mean (mu)",
+    x = "True Mean (mu)",
+    y = "Average Estimate of mu_hat")
+```
+
+**Is the sample average of μ̂ across tests for which the null is rejected approximately equal to the true value of μ ? Why or why not?**
+
+**For smaller values of mu (like 0 and 1), the sample average of mu_hat across tests for which the null is rejected is not approximately equal to the true value of mu. This discrepancy is due to the phenomenon of "winner's curse," where the estimates are biased upwards in cases where the null hypothesis is rejected. When the true effect size is small, samples that significantly deviate from the null hypothesis are more likely to be due to random chance, leading to an overestimation of the effect size.**
+
+**For larger values of mu (4, 5, 6), the sample average of mu_hat across tests for which the null is rejected closely approximates the true value of mu. In these cases, the effect size is large enough that the sample estimates where the null is rejected are not just due to random variations but are genuinely reflecting the true effect size.**
+
+**Conclusion: The data shows that the bias in estimates of mu_hat when considering only samples where the null is rejected depends on the true effect size. For small effect sizes, this bias is significant, leading to overestimation. For large effect sizes, the bias diminishes, and the estimates are much more accurate. This insight is crucial in interpreting results from statistical testts, especially in cases where significant results are preferentially reportted or considered.**
