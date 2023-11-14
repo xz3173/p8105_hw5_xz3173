@@ -56,7 +56,7 @@ prop_test_result =
     n = pull(baltimore_df, total_homicides)) 
 
 # Tidying the result using broom:tidy
-tidied_result = broom::tidy(prop_test_result)
+tidied_result = tidy(prop_test_result)
 
 # Extracting the estimated proportion and confidence intervals
 estimated_proportion = pull(tidied_result, estimate)
@@ -79,8 +79,6 @@ results_df = city_summary |>
   mutate(tidied_result = map(prop_test_result, broom::tidy)) |>
   unnest(tidied_result) |>
   select(city_state, estimate, conf.low, conf.high)
-
-head(results_df)
 ```
 
 Create a plot that shows the estimates and CIs for each city – check out geom_errorbar for a way to add error bars based on the upper and lower limits. Organize cities according to the proportion of unsolved homicides.
@@ -106,6 +104,8 @@ plot =
     x = "City",
     y = "Estimated Proportion of Unsolved Homicides") +
   theme_minimal()
+
+plot
 ```
 
 
@@ -202,4 +202,47 @@ Make a plot showing the average estimate of μ̂
  across tests for which the null is rejected approximately equal to the true value of μ
 ? Why or why not?
 
+
+
+
+```{r}
+# Define the simulation function
+sim_t_test = function(n = 30, mu = 0, sigma =5) {
+    x = rnorm(n, mean = mu, sd = sigma)
+    test_result = t.test(x, mu = 0)
+    tidy(test_result)
+}
+```
+
+```{r}
+mu_values = 0:6
+alpha = 0.05
+
+# Create a grid for simulations
+sim_grid =
+  expand_grid(
+    mu = mu_values,
+    iter = 1:5000
+    ) 
+```
+
+```{r}
+# Perform simulations
+all_results = sim_grid |>
+  mutate(
+    sim_results = 
+      map2(
+        mu,
+        iter,
+        ~sim_t_test(
+          n = 30,
+          mu = .x, 
+          sigma = 5))) |>
+  select(-iter) |>
+  unnest(sim_results) |>
+  mutate(
+    rejected_null = p.value < alpha,
+    mu = as.numeric(mu)
+  )
+```
 
