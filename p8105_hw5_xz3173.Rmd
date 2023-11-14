@@ -7,8 +7,27 @@ output: github_document
 
 ```{r setup, include=FALSE}
 library(tidyverse)
-library(rvest)
 library(broom)
+library(viridis)
+library(p8105.datasets)
+
+knitr::opts_chunk$set(
+	echo = TRUE,
+	warning = FALSE,
+	fig.width = 8, 
+  fig.height = 6,
+  out.width = "90%"
+)
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
 ```
 
 # Problem 1
@@ -130,7 +149,7 @@ file_info = file_info |>
 # Tidy the result; manipulate file names to include control arm and subject ID, make sure weekly observations are “tidy”, and do any other tidying that’s necessary
 tidy_data = file_info |>
   mutate(
-    subject_id = str_extract(file, "(?<=con_|exp_)[0-9]+"), 
+    subject_id = as.numeric(str_extract(file, "(?<=con_|exp_)[0-9]+")), 
     arm = ifelse(str_detect(file, "con"), "con", "exp")) |>
   select(subject_id, arm, data) |>
   unnest(cols = c(data)) |>
@@ -149,10 +168,11 @@ ggplot(
   tidy_data, 
   aes(
     x = week,
-    y = observation, 
-    group = subject_id,
+    y = observation,
+    group = interaction(subject_id, arm),
     color = arm)) +
   geom_line(alpha = 0.5) +
+  geom_point() +
   theme_minimal() +
   labs(title = "Spaghetti Plot of Observations over Time",
        x = "Week",
