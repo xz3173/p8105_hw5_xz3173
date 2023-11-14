@@ -19,17 +19,22 @@ homicide_df =
   read_csv("data/homicide-data.csv") |>
   janitor::clean_names()
 
-homicide_df
+# Explore data
+str(homicide_df)
+summary(homicide_df)
 ```
 
-Describe the raw data. Create a city_state variable (e.g. “Baltimore, MD”) and then summarize within cities to obtain the total number of homicides and the number of unsolved homicides (those for which the disposition is “Closed without arrest” or “Open/No arrest”).
+**Describe the raw data.** 
+
+**The `homicide_df` dataset contains `r nrow(homicide_df)` rows and `r ncol(homicide_df)` columns, with each row representing a single homicide case report from the data that the Washington Post has collected in 50 large U.S. cities. There are several victim-related variables, such as first name, last name, race, age, sex of victims. There are also homicide-related variables, such as the location of the killing, whether an arrest was made.**
+
 
 ```{r}
-# create a city_state variable
+# Create a city_state variable
 city_summary = homicide_df |>
   mutate(city_state = str_c(city, state, sep = ", ")) |>
 
-# summarize within cities to obtain the ttotal number of homicides and the number of unsolved homicides
+# Summarize within cities to obtain the total number of homicides and the number of unsolved homicides (those for which the disposition is “Closed without arrest” or “Open/No arrest”)
   group_by(city_state) |>
   summarize(
     total_homicides = n(),
@@ -40,20 +45,20 @@ city_summary = homicide_df |>
 For the city of Baltimore, MD, use the prop.test function to estimate the proportion of homicides that are unsolved; save the output of prop.test as an R object, apply the broom::tidy to this object and pull the estimated proportion and confidence intervals from the resulting tidy dataframe.
 
 ```{r}
-# filter data for Baltimore, MD
+# Filter data for Baltimore, MD
 baltimore_df = city_summary |>
   filter(city_state == "Baltimore, MD") 
 
-# using prop.test to estimate the proportion of unsolved homicides
+# Using prop.test to estimate the proportion of unsolved homicides
 prop_test_result = 
   prop.test(
     x = pull(baltimore_df, unsolved_homicides),
     n = pull(baltimore_df, total_homicides)) 
 
-# tidying the result using broom:tidy
+# Tidying the result using broom:tidy
 tidied_result = broom::tidy(prop_test_result)
 
-# extracting the estimated proportion and confidence intervals
+# Extracting the estimated proportion and confidence intervals
 estimated_proportion = pull(tidied_result, estimate)
 conf_low = pull(tidied_result, conf.low)
 conf_high = pull(tidied_result, conf.high)
@@ -62,6 +67,7 @@ conf_high = pull(tidied_result, conf.high)
 Now run prop.test for each of the cities in your dataset, and extract both the proportion of unsolved homicides and the confidence interval for each. Do this within a “tidy” pipeline, making use of purrr::map, purrr::map2, list columns and unnest as necessary to create a tidy dataframe with estimated proportions and CIs for each city.
 
 ```{r}
+# Run prop.test for each city and create a tidy dataframe
 results_df = city_summary |>
   mutate(
     prop_test_result = map2(
@@ -80,7 +86,7 @@ head(results_df)
 Create a plot that shows the estimates and CIs for each city – check out geom_errorbar for a way to add error bars based on the upper and lower limits. Organize cities according to the proportion of unsolved homicides.
 
 ```{r}
-# create the plot
+# Create the plot
 plot = 
   ggplot(
     results_df, 
@@ -96,12 +102,10 @@ plot =
     color = "red") +
   coord_flip() +
   labs(
-    tittle = "Proportiton of Unsolved Homicides by City",
+    title = "Proportiton of Unsolved Homicides by City",
     x = "City",
     y = "Estimated Proportion of Unsolved Homicides") +
   theme_minimal()
-
-plot
 ```
 
 
@@ -111,7 +115,9 @@ plot
 Create a tidy dataframe containing data from all participants, including the subject ID, arm, and observations over time:
 
 Start with a dataframe containing all file names; the list.files function will help
+
 Iterate over file names and read in data for each subject using purrr::map and saving the result as a new variable in the dataframe
+
 Tidy the result; manipulate file names to include control arm and subject ID, make sure weekly observations are “tidy”, and do any other tidying that’s necessary
 
 
@@ -165,8 +171,33 @@ ggplot(
 
 # Problem 3
 
+When designing an experiment or analysis, a common question is whether it is likely that a true effect will be detected – put differently, whether a false null hypothesis will be rejected. The probability that a false null hypothesis is rejected is referred to as power, and it depends on several factors, including: the sample size; the effect size; and the error variance. In this problem, you will conduct a simulation to explore power in a one-sample t-test.
+
+First set the following design elements:
+
+Fix n=30
+Fix σ=5
+Set μ=0
+. Generate 5000 datasets from the model
+
+x∼Normal[μ,σ]
+
+For each dataset, save μ̂ 
+ and the p-value arising from a test of H:μ=0
+ using α=0.05
+. Hint: to obtain the estimate and p-value, use broom::tidy to clean the output of t.test.
+
+Repeat the above for μ={1,2,3,4,5,6}
+, and complete the following:
+
+Make a plot showing the proportion of times the null was rejected (the power of the test) on the y axis and the true value of μ
+ on the x axis. Describe the association between effect size and power.
+Make a plot showing the average estimate of μ̂ 
+ on the y axis and the true value of μ
+ on the x axis. Make a second plot (or overlay on the first) the average estimate of μ̂ 
+ only in samples for which the null was rejected on the y axis and the true value of μ
+ on the x axis. Is the sample average of μ̂ 
+ across tests for which the null is rejected approximately equal to the true value of μ
+? Why or why not?
 
 
-```{r}
-
-```
